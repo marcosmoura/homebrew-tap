@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  formulae:
+  tap:
     strategy:
       fail-fast: false
       matrix:
@@ -41,7 +41,8 @@ jobs:
       - name: Audit
         run: brew audit --strict --tap marcosmoura/tap
 
-      # deck's release workflow writes Formula/deck.rb; until the first release there is none.
+      # Each project's release workflow writes its own file here (see the README); the tap
+      # may hold no formula or cask at all yet.
       - name: Install and test every formula
         run: |
           shopt -s nullglob
@@ -54,4 +55,18 @@ jobs:
             name="marcosmoura/tap/$(basename "$file" .rb)"
             brew install --formula "$name"
             brew test "$name"
+          done
+
+      # Casks are macOS only.
+      - name: Install every cask
+        if: runner.os == 'macOS'
+        run: |
+          shopt -s nullglob
+          casks=("$(brew --repository marcosmoura/tap)"/Casks/*.rb)
+          if ((${#casks[@]} == 0)); then
+            echo "no casks yet"
+            exit 0
+          fi
+          for file in "${casks[@]}"; do
+            brew install --cask "marcosmoura/tap/$(basename "$file" .rb)"
           done

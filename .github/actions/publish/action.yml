@@ -1,0 +1,54 @@
+name: Publish to marcosmoura/tap
+description: >-
+  Writes a rendered formula or cask into this tap through the GitHub contents API,
+  creating the file or updating it. Any error other than "not there yet" fails the step.
+
+inputs:
+  file:
+    description: Path, in the calling job's workspace, of the rendered formula or cask.
+    required: true
+  path:
+    description: Where it goes in the tap, e.g. Formula/<name>.rb or Casks/<name>.rb.
+    required: true
+  message:
+    description: Commit message in the tap, e.g. "<name> <version>".
+    required: true
+  token:
+    description: A token with Contents read and write on the tap.
+    required: true
+  tap:
+    description: The tap repository.
+    default: marcosmoura/homebrew-tap
+
+runs:
+  using: composite
+  steps:
+    - name: Write the file to the tap
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        FILE: ${{ inputs.file }}
+        TAP_PATH: ${{ inputs.path }}
+        MESSAGE: ${{ inputs.message }}
+        TAP: ${{ inputs.tap }}
+      run: |
+        set -euo pipefail
+        case "$TAP_PATH" in
+          */*/*) echo "path must be Formula/<name>.rb or Casks/<name>.rb, got $TAP_PATH" >&2; exit 1 ;;
+          Formula/*.rb | Casks/*.rb) ;;
+          *) echo "path must be Formula/<name>.rb or Casks/<name>.rb, got $TAP_PATH" >&2; exit 1 ;;
+        esac
+        test -s "$FILE" || { echo "$FILE is missing or empty" >&2; exit 1; }
+        # The current blob's sha is needed to update the file; a 404 means create it.
+        err="$RUNNER_TEMP/tap-publish-err"
+        if ! sha="$(gh api "repos/$TAP/contents/$TAP_PATH" --jq .sha 2>"$err")"; then
+          grep -q 'HTTP 404' "$err" || { cat "$err" >&2; exit 1; }
+          sha=""
+        fi
+        # base64 without line breaks, on GNU and BSD alike (callers may run on macOS).
+        base64 < "$FILE" | tr -d '\n' | jq -Rs \
+          --arg message "$MESSAGE" \
+          --arg sha "$sha" \
+          '{message: $message, content: .} + (if $sha == "" then {} else {sha: $sha} end)' |
+          gh api --method PUT "repos/$TAP/contents/$TAP_PATH" --input - >/dev/null
+        echo "wrote $TAP_PATH in $TAP"
