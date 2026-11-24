@@ -1,0 +1,57 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash -xeuo pipefail {0}
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  formulae:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    steps:
+      # Taps this repository's checkout as marcosmoura/tap.
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@63a2d4d8d4193eab3e62b1b782ff3ab8408f5b29 # 2026.11.09.1
+
+      # Homebrew refuses to load formulae from an untrusted tap. setup-homebrew trusts it too;
+      # kept explicit so the checks do not depend on that.
+      - name: Trust the tap
+        run: brew trust --tap marcosmoura/tap
+
+      - name: Style
+        run: brew style marcosmoura/tap
+
+      - name: Audit
+        run: brew audit --strict --tap marcosmoura/tap
+
+      # deck's release workflow writes Formula/deck.rb; until the first release there is none.
+      - name: Install and test every formula
+        run: |
+          shopt -s nullglob
+          formulae=("$(brew --repository marcosmoura/tap)"/Formula/*.rb)
+          if ((${#formulae[@]} == 0)); then
+            echo "no formulae yet"
+            exit 0
+          fi
+          for file in "${formulae[@]}"; do
+            name="marcosmoura/tap/$(basename "$file" .rb)"
+            brew install --formula "$name"
+            brew test "$name"
+          done
