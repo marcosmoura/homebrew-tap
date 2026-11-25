@@ -5,23 +5,23 @@ class Deck < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/marcosmoura/deck/releases/download/v0.2.0/deck-0.2.0-aarch64-apple-darwin.tar.gz"
-      sha256 "6ddf254a1f3fd6c6c4f257949eb1ed460709375978e3c8ad8908a2c39297b85c"
+      url "https://github.com/marcosmoura/deck/releases/download/v0.3.0/deck-0.3.0-aarch64-apple-darwin.tar.gz"
+      sha256 "9e2ebd312b98347744106404787e9d46208593b4ff002119f62ef924e90535ea"
     end
     on_intel do
-      url "https://github.com/marcosmoura/deck/releases/download/v0.2.0/deck-0.2.0-x86_64-apple-darwin.tar.gz"
-      sha256 "a979bfa93bd4edfca2671c80759dacb8919837e4778069fc92d445db561a65d9"
+      url "https://github.com/marcosmoura/deck/releases/download/v0.3.0/deck-0.3.0-x86_64-apple-darwin.tar.gz"
+      sha256 "3ea7c0a8aae5f623ddd288398ebc4de7540478908cb549f3cae5031f4b6350d6"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/marcosmoura/deck/releases/download/v0.2.0/deck-0.2.0-aarch64-unknown-linux-gnu.tar.gz"
-      sha256 "fe654fc83fef059164c2d5fd4514a3db14a04e12b5c404c505ba6002635eac37"
+      url "https://github.com/marcosmoura/deck/releases/download/v0.3.0/deck-0.3.0-aarch64-unknown-linux-gnu.tar.gz"
+      sha256 "943cf32a960f0b56f810e54f062324cd2f04277b19e248021a8bf994801db7d4"
     end
     on_intel do
-      url "https://github.com/marcosmoura/deck/releases/download/v0.2.0/deck-0.2.0-x86_64-unknown-linux-gnu.tar.gz"
-      sha256 "0daffbdc2ae11726a5b0f3b1ce2e13c00e84ad1a772fb9549a0d79887c098b9a"
+      url "https://github.com/marcosmoura/deck/releases/download/v0.3.0/deck-0.3.0-x86_64-unknown-linux-gnu.tar.gz"
+      sha256 "29b15a100b1303ad3bef45fee00f4939e63515c139aaa9922f6a4e4f2c3e9f8f"
     end
   end
 
@@ -33,6 +33,15 @@ class Deck < Formula
     <<~EOS
       To see what Claude Code, Codex and OpenCode are doing in the sidebar, run once:
         deck hooks install claude codex opencode
+
+      To teach them to drive deck (open terminals, read and wait for them), run once:
+        deck skills install claude codex opencode
+
+      After upgrading deck, hand a running daemon over to the new version, keeping what
+      runs in it:
+        deck upgrade
+      and refresh the skill:
+        deck skills install claude codex opencode
     EOS
   end
 
